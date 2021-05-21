@@ -1,0 +1,15 @@
+{
+  "name": "github-oauth",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A cloudflare worker to handle GitHub 0auth requests",
+  "main": "github-oauth-worker.js",
+  "author": "github.com/dr-useless",
+  "license": "MIT",
+  "repository": "github:dr-useless/github-oauth",
+  "release": {
+    "branches": [
+      "main"
+    ]
+  }
+}
