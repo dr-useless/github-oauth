@@ -5,7 +5,6 @@ addEventListener("fetch", (event) => {
 // use secrets
 const client_id = CLIENT_ID;
 const client_secret = CLIENT_SECRET;
-
 const origin = ORIGIN;
 
 async function handle(request) {
@@ -59,8 +58,9 @@ async function handle(request) {
       provider: 'github'
     }
 
-    const script = `<html>
-    <h1>test</h1>
+    const script = `
+    <html>
+      <p>Authorizing...</p>
       <script>
       (function() {
         function recieveMessage(e) {
@@ -80,7 +80,8 @@ async function handle(request) {
         console.log("Sending message: %o", "github")
         window.opener.postMessage("authorizing:github", "*")
       })()
-      </script></html>`
+      </script>
+    </html>`
 
     return new Response(script, {
       status: 200,
