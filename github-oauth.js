@@ -6,6 +6,8 @@ addEventListener("fetch", (event) => {
 const client_id = CLIENT_ID;
 const client_secret = CLIENT_SECRET;
 
+const origin = ORIGIN;
+
 async function handle(request) {
   // handle CORS pre-flight request
   if (request.method === "OPTIONS") {
@@ -19,7 +21,10 @@ async function handle(request) {
   }
 
   // redirect GET requests to the OAuth login page on github.com
-  if (request.method === "GET") {
+  const { searchParams } = new URL(request.url)
+  const code = searchParams.get('code')
+
+  if (request.method === "GET" && !code) {
     return Response.redirect(
       `https://github.com/login/oauth/authorize?client_id=${client_id}`,
       302
@@ -27,8 +32,6 @@ async function handle(request) {
   }
 
   try {
-    const { code } = await request.json();
-
     const response = await fetch(
       "https://github.com/login/oauth/access_token",
       {
@@ -43,6 +46,7 @@ async function handle(request) {
     );
     const result = await response.json();
     const headers = {
+      "content-type": "text/html;charset=UTF-8",
       "Access-Control-Allow-Origin": "*",
     };
 
@@ -50,8 +54,36 @@ async function handle(request) {
       return new Response(JSON.stringify(result), { status: 401, headers });
     }
 
-    return new Response(JSON.stringify({ token: result.access_token }), {
-      status: 201,
+    const content = {
+      token: result.access_token,
+      provider: 'github'
+    }
+
+    const script = `<html>
+    <h1>test</h1>
+      <script>
+      (function() {
+        function recieveMessage(e) {
+          console.log("recieveMessage %o", e)
+          if (!e.origin.match('${origin}')) {
+            console.log('Invalid origin: %s', e.origin);
+            return;
+          }
+          // send message to main window with da app
+          window.opener.postMessage(
+            'authorization:github:success:${JSON.stringify(content)}',
+            e.origin
+          )
+        }
+        window.addEventListener("message", recieveMessage, false)
+        // Start handshare with parent
+        console.log("Sending message: %o", "github")
+        window.opener.postMessage("authorizing:github", "*")
+      })()
+      </script></html>`
+
+    return new Response(script, {
+      status: 200,
       headers,
     });
   } catch (error) {
