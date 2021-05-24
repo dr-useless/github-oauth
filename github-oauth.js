@@ -25,7 +25,7 @@ async function handle(request) {
 
   if (request.method === "GET" && !code) {
     return Response.redirect(
-      `https://github.com/login/oauth/authorize?client_id=${client_id}`,
+      `https://github.com/login/oauth/authorize?client_id=${client_id}&scope=repo%20read:user`,
       302
     );
   }
@@ -60,26 +60,28 @@ async function handle(request) {
 
     const script = `
     <html>
-      <p>Authorizing...</p>
+      <body>
+        <p>Authorizing...</p>
+      </body>
       <script>
-      (function() {
-        function recieveMessage(e) {
-          console.log("recieveMessage %o", e)
-          if (!e.origin.match('${origin}')) {
-            console.log('Invalid origin: %s', e.origin);
-            return;
+        (function() {
+          function recieveMessage(e) {
+            console.log("recieveMessage %o", e)
+            if (!e.origin.match('${origin}')) {
+              console.log('Invalid origin: %s', e.origin);
+              return;
+            }
+            // send message to main window with da app
+            window.opener.postMessage(
+              'authorization:github:success:${JSON.stringify(content)}',
+              e.origin
+            )
           }
-          // send message to main window with da app
-          window.opener.postMessage(
-            'authorization:github:success:${JSON.stringify(content)}',
-            e.origin
-          )
-        }
-        window.addEventListener("message", recieveMessage, false)
-        // Start handshare with parent
-        console.log("Sending message: %o", "github")
-        window.opener.postMessage("authorizing:github", "*")
-      })()
+          window.addEventListener("message", recieveMessage, false)
+          // Start handshare with parent
+          console.log("Sending message: %o", "github")
+          window.opener.postMessage("authorizing:github", "*")
+        })()
       </script>
     </html>`
 
